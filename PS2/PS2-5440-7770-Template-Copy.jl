@@ -81,21 +81,31 @@ begin
 	push!(reaction_array,"v₂,2-(Nomega-L-arginino)succinate,fumarate+L-arginine,false")
 	push!(reaction_array,"v₃,L-arginine+H2O,L-ornithine+urea,false")
 	push!(reaction_array,"v₄,carbamoyl phosphate+L-ornithine,phosphate+L-citrulline,false")
-	push!(reaction_array,"v₅,2 L-arginine+3 NADPH+3 H++4 O2,2 L-citrulline+2 nitric oxide+3 NADP++4 H2O,true")
+	push!(reaction_array,"v₅,2*L-arginine+3*NADPH+3*Hydrogen+4*O2,2*L-citrulline+2*nitric oxide+3*NADP+4*H2O,true")
 	# exchange reactions -
 	push!(reaction_array,"b₁,∅,carbamoyl phosphate,false")
-	push!(reaction_array,"b₂,∅,aspartate,false")
+	push!(reaction_array,"b₂,∅,L-aspartate,false")
 	push!(reaction_array,"b₃,fumarate,∅,false")
 	push!(reaction_array,"b₄,urea,∅,false")
-	push!(reaction_array,"b₅,N-acetyl-L-citrulline,citruline,false")
-	push!(reaction_array,"b₆,N-acetyl-ornithine+H2O,L-ornithine+acetate,true")
+
+	# other reactions -
+	push!(reaction_array,"vPhos,phosphate,∅,false")
+	push!(reaction_array,"vdiPhos,diphosphate,∅,false")
+	push!(reaction_array,"vAMP,AMP,∅,true")
+	push!(reaction_array,"vATP,ATP,∅,true")
+	push!(reaction_array,"vNADPH,NADPH,∅,true")
+	push!(reaction_array,"vNADP,NADP,∅,true")
+	push!(reaction_array,"vH,Hydrogen,∅,true")
+	push!(reaction_array,"vO2,∅,O2,false")
+	push!(reaction_array,"vNO,nitric oxide,∅,false")
 
 	# compute the stoichiometric matrix -
 	(S, species_array, reaction_name_array) = lib.build_stoichiometric_matrix(reaction_array; 
 		expand=true);
 
 	# show -
-	nothing
+	# nothing
+
 end
 
 # ╔═╡ 97b0763d-dcab-4afa-b660-52e18b3d523f
@@ -112,18 +122,11 @@ begin
 	# show -
 	nothing
 
-	pidx = 5
-end
+	P
+	#given the number of rows in P, there are 7 extreme pathways. Of these, one produces urea.
 
-# ╔═╡ 999ae1fd-5341-4f66-9db2-dec53fa0cd49
-begin
-	B = S |> binary_stoichiometric_matrix
-	MCA = B*transpose(B)
-end
-
-# ╔═╡ 4520fc6e-7305-487e-924d-af22406e6d45
-begin
-	RCA = transpose(B)*B
+	
+	#𝒩
 end
 
 # ╔═╡ ab2bcfd5-3ba7-4388-8a3c-2cb95fba989a
@@ -141,6 +144,111 @@ a {
     text-decoration: none;
 }
 </style>"""
+
+# ╔═╡ 9c6237e2-99cf-4ab7-97a6-ad7230b14188
+function binary_stoichiometric_matrix(matrix::Array{Float64,2})::Array{Int64,2}
+
+	# initialize -
+	(ℳ,ℛ) = size(matrix)
+	B = Array{Int64,2}(undef,ℳ,ℛ)
+
+	for row_index ∈ 1:ℳ
+		for col_index ∈ 1:ℛ
+
+			old_value = matrix[row_index,col_index]
+			if (old_value == 0.0)
+				B[row_index,col_index] = 0
+			else
+				B[row_index,col_index] = 1
+			end
+		end
+	end
+	
+	# return -
+	return B
+end
+
+# ╔═╡ 4ddd7236-075d-4285-b93c-8d5760570f45
+binary_stoichiometric_matrix
+
+# ╔═╡ 999ae1fd-5341-4f66-9db2-dec53fa0cd49
+begin
+	B = S |> binary_stoichiometric_matrix
+	MCA = B*transpose(B)
+end
+
+# ╔═╡ 4520fc6e-7305-487e-924d-af22406e6d45
+begin
+	RCA = transpose(B)*B
+end
+
+# ╔═╡ 56f302ce-4f82-484c-bf07-42f6948f7f29
+function build_stoichiometric_matrix(reactions::Array{String,1})::Tuple{Array{Float64,2},
+	Array{String,1}, Array{String,1}}
+
+	# initialize -
+	species_array = Array{String,1}()
+	reaction_array = Array{String,1}()
+	reaction_dictionary_array = Array{Dict{String,Float64},1}()
+	
+	# first: let's discover the species list -
+	for reaction_string ∈ reactions
+
+		# initialize tmp storage -
+		tmp_dictionary = Dict{String,Float64}()
+		
+		# split the reaction into its components -
+		component_array = split(reaction_string,',');
+
+		# reaction name -
+		reaction_name = String.(component_array[1]);
+		push!(reaction_array, reaction_name);
+		
+		# reactant phrase => 2, and product phrase => 3
+		reactant_phrase = String.(component_array[2]);
+		product_phrase = String.(component_array[3]);
+
+		# generate species lists for the reactants and products, then merge -
+		merge!(tmp_dictionary, extract_species_dictionary(reactant_phrase; direction = -1.0))
+		merge!(tmp_dictionary, extract_species_dictionary(product_phrase; direction = 1.0))
+
+		# grab the tmp_dictionary for later -
+		push!(reaction_dictionary_array, tmp_dictionary)
+
+		# the species that we need to look at are the keys of the tmp_dictionary -
+		tmp_species_list = keys(tmp_dictionary)
+		
+		# we need a unique species list, so check to see if we have already discovered this species -
+		for tmp_species ∈ tmp_species_list
+
+			if (in(tmp_species, species_array) == false)
+
+				# ok, we have *not* seen this species before, let's grab it -
+				push!(species_array, tmp_species)
+			end
+		end
+	end
+
+	# sort alphabetically -
+	sort!(species_array)
+	
+	# we have a *unique* species array, let's initialize some storage for the stoichiometric array
+	S = zeros(length(species_array), length(reactions));
+
+	# last: fill in the values for stoichiometric coefficents -
+	for (row_index, species_symbol) ∈ enumerate(species_array)
+		for (col_index, reaction_dictionary) ∈ enumerate(reaction_dictionary_array)
+
+			# ok: is this species symbol in my reaction dictionary?
+			if (haskey(reaction_dictionary, species_symbol) == true)
+				S[row_index,col_index] = reaction_dictionary[species_symbol]
+			end
+		end
+	end
+
+	# return -
+	return (S, species_array, reaction_array)
+end
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -1138,6 +1246,7 @@ version = "0.9.1+5"
 # ╠═5338451e-3c4b-4030-bbbb-42eaf4209a89
 # ╟─6970dab5-16bd-4898-b88d-723cb1b3d89e
 # ╠═97b0763d-dcab-4afa-b660-52e18b3d523f
+# ╠═4ddd7236-075d-4285-b93c-8d5760570f45
 # ╟─b473b17e-3bf5-4b6c-af24-fe57b5a7e7e9
 # ╠═999ae1fd-5341-4f66-9db2-dec53fa0cd49
 # ╟─b7e5d1a6-57ed-4d09-a039-a4bd12386367
@@ -1145,5 +1254,7 @@ version = "0.9.1+5"
 # ╠═67f5db98-88d0-11ec-27ac-b57538a166f4
 # ╠═267865de-1b5c-4579-861b-c6c46beb4739
 # ╟─ab2bcfd5-3ba7-4388-8a3c-2cb95fba989a
+# ╠═9c6237e2-99cf-4ab7-97a6-ad7230b14188
+# ╠═56f302ce-4f82-484c-bf07-42f6948f7f29
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
