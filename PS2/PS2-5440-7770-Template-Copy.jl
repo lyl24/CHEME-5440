@@ -91,11 +91,11 @@ begin
 	# other reactions -
 	push!(reaction_array,"vPhos,phosphate,∅,false")
 	push!(reaction_array,"vdiPhos,diphosphate,∅,false")
-	push!(reaction_array,"vAMP,AMP,∅,true")
-	push!(reaction_array,"vATP,ATP,∅,true")
-	push!(reaction_array,"vNADPH,NADPH,∅,true")
-	push!(reaction_array,"vNADP,NADP,∅,true")
-	push!(reaction_array,"vH,Hydrogen,∅,true")
+	push!(reaction_array,"vAMP,AMP,∅,false")
+	push!(reaction_array,"vATP,∅,ATP,false")
+	push!(reaction_array,"vNADPH,∅,NADPH,false")
+	push!(reaction_array,"vNADP,NADP,∅,false")
+	push!(reaction_array,"vH,∅,Hydrogen,false")
 	push!(reaction_array,"vO2,∅,O2,false")
 	push!(reaction_array,"vNO,nitric oxide,∅,false")
 
@@ -123,27 +123,15 @@ begin
 	nothing
 
 	P
-	#given the number of rows in P, there are 7 extreme pathways. Of these, one produces urea.
+	#given the number of rows in P, there are 2 extreme pathways. Of these, one produces urea.
 
-	
 	#𝒩
+	#the entire matrix is zeros, therefore it is balanced
+
+	#reaction frequency:
+	#1: 50%, 2: 50%, 3: 50%, 4: 50%, 5: 100%, 6: 50%, 7: 50%, 8: 50%, 9: 50%, 10: 50%, 11: 50%, 12: 50%, 13: 50%, 14: 50%, 15: 50%, 16: 50%, 17: 50%, 18: 50%, 19: 50%
+	
 end
-
-# ╔═╡ ab2bcfd5-3ba7-4388-8a3c-2cb95fba989a
-html"""
-<style>
-main {
-    max-width: 900px;
-    width: 70%;
-    margin: auto;
-    font-family: "Roboto, monospace";
-}
-
-a {
-    color: blue;
-    text-decoration: none;
-}
-</style>"""
 
 # ╔═╡ 9c6237e2-99cf-4ab7-97a6-ad7230b14188
 function binary_stoichiometric_matrix(matrix::Array{Float64,2})::Array{Int64,2}
@@ -180,6 +168,24 @@ end
 # ╔═╡ 4520fc6e-7305-487e-924d-af22406e6d45
 begin
 	RCA = transpose(B)*B
+end
+
+# ╔═╡ 8927ef36-3d02-4f49-a70e-134e9d32dfb4
+begin
+	diag(RCA)
+
+	#Rank order (from most to least) the connectivity of the metabolites and reactions.
+	#v5, v1, v4 = v3, v2, everything else is pretty equal
+
+end
+
+# ╔═╡ 8cfe1838-e0e7-418f-98c0-78b2da33a60b
+begin
+	diag(MCA)
+
+	#Rank order (from most to least) the connectivity of the metabolites and reactions.
+	#L-citrulline = L-arginine, H2O = Hydrogen = NADP = NADPH = O2 = Nitric oxide, 2-(Nomega-L-arginino)succinate = AMP = ATP = L-aspartate = L-ornithine = carbamoyl phosphate = diphosphate = fumarate = phosphate = urea 
+	
 end
 
 # ╔═╡ 56f302ce-4f82-484c-bf07-42f6948f7f29
@@ -1251,9 +1257,10 @@ version = "0.9.1+5"
 # ╠═999ae1fd-5341-4f66-9db2-dec53fa0cd49
 # ╟─b7e5d1a6-57ed-4d09-a039-a4bd12386367
 # ╠═4520fc6e-7305-487e-924d-af22406e6d45
+# ╠═8cfe1838-e0e7-418f-98c0-78b2da33a60b
+# ╠═8927ef36-3d02-4f49-a70e-134e9d32dfb4
 # ╠═67f5db98-88d0-11ec-27ac-b57538a166f4
 # ╠═267865de-1b5c-4579-861b-c6c46beb4739
-# ╟─ab2bcfd5-3ba7-4388-8a3c-2cb95fba989a
 # ╠═9c6237e2-99cf-4ab7-97a6-ad7230b14188
 # ╠═56f302ce-4f82-484c-bf07-42f6948f7f29
 # ╟─00000000-0000-0000-0000-000000000001
