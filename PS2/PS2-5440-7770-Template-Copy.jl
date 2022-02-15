@@ -177,6 +177,8 @@ begin
 	#Rank order (from most to least) the connectivity of the metabolites and reactions.
 	#v5, v1, v4 = v3, v2, everything else is pretty equal
 
+	#there does not seem to be a correlation between reaction connectivity and extreme pathway reaction frequency
+
 end
 
 # ╔═╡ 8cfe1838-e0e7-418f-98c0-78b2da33a60b
